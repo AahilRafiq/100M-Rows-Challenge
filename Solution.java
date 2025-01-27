@@ -10,6 +10,7 @@ import java.util.List;
 
 public class Solution{
     public static void main(String[] args) {
+        long startTime = System.currentTimeMillis();
         Container.initMaps(1);
         try {
             try (RandomAccessFile file = new RandomAccessFile("measurements.txt", "r")) {
@@ -49,6 +50,8 @@ public class Solution{
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }
+        long endTime = System.currentTimeMillis();
+        System.out.println((endTime-startTime) + "ms");
     }
 }
 
