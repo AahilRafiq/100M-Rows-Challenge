@@ -1,30 +1,6 @@
 import java.io.*;
 import java.util.*;
 
-class Stats {
-    double min;
-    double max;
-    double sum;
-    int count;
-
-    public Stats() {
-        this.min = Double.MAX_VALUE;
-        this.max = Double.MIN_VALUE;
-        this.sum = 0.0;
-        this.count = 0;
-    }
-
-    public void update(double measurement) {
-        if (measurement < min) min = measurement;
-        if (measurement > max) max = measurement;
-        sum += measurement;
-        count++;
-    }
-
-    public double getAverage() {
-        return sum / count;
-    }
-}
 
 public class Main {
     public static void main(String[] args) {
@@ -49,12 +25,37 @@ public class Main {
             System.err.println("Error reading the file: " + e.getMessage());
             return;
         }
-
+        
         for (Map.Entry<String, Stats> entry : data.entrySet()) {
             String place = entry.getKey();
             Stats stats = entry.getValue();
             System.out.printf("Place: %s%nMin: %.2f%nMax: %.2f%nAverage: %.10f%n%n",
-                place, stats.min, stats.max, stats.getAverage());
+            place, stats.min, stats.max, stats.getAverage());
         }
+    }
+}
+
+class Stats {
+    double min;
+    double max;
+    double sum;
+    int count;
+
+    public Stats() {
+        this.min = Double.MAX_VALUE;
+        this.max = Double.MIN_VALUE;
+        this.sum = 0.0;
+        this.count = 0;
+    }
+
+    public void update(double measurement) {
+        if (measurement < min) min = measurement;
+        if (measurement > max) max = measurement;
+        sum += measurement;
+        count++;
+    }
+
+    public double getAverage() {
+        return sum / count;
     }
 }

@@ -7,24 +7,69 @@ import java.nio.channels.FileChannel.MapMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 
 public class Solution {
-
+    
+    private static HashMap<String,Stats> hashMap;
+    
     public static void main(String[] args) {
         long startTime = System.currentTimeMillis();
-        final int numThreads = 1;
+        final int numThreads = Runtime.getRuntime().availableProcessors()+4;
         Container.initMaps(numThreads);
-
+        
         try {
-            Thread t = Thread.ofVirtual().unstarted(new Worker(0,numThreads));
-            t.start();
-            t.join();
+            Thread[] workers = new Thread[numThreads];
+            for(int i=0; i<numThreads; i++) {
+                workers[i] = Thread.ofVirtual().start(new Worker(i, numThreads));
+            }
+            for(Thread t : workers) {
+                t.join();
+            }
             
         } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
-
+        
+        finaliseAns();
+        printResult();
+        
         long endTime = System.currentTimeMillis();
-        System.out.println((endTime - startTime) + "ms");
+        System.out.println((endTime - startTime) + "ms," + numThreads);
+    }
+
+    public static void finaliseAns() {
+        var mainMap = Container.maps.get(0);
+        Stats currStats, mainStats;
+        for(int i=1 ; i<Container.maps.size(); i++) {
+            var otherMap = Container.maps.get(i);
+            for(Entry<String,Stats> e : otherMap.entrySet()) {
+                if(mainMap.containsKey(e.getKey())) {
+                    mainStats = mainMap.get(e.getKey());
+                    currStats = e.getValue();
+                    
+                    mainStats.count += currStats.count;
+                    mainStats.sum += currStats.sum;
+                    if(currStats.min < mainStats.min) mainStats.min = currStats.min;
+                    if(currStats.max > mainStats.max) mainStats.max = currStats.max;
+
+                    mainMap.put(e.getKey(),mainStats);
+
+                } else {
+                    mainMap.put(e.getKey(),e.getValue());
+                }
+            }
+        }
+        hashMap = mainMap;
+    }
+
+    public static void printResult() {
+        Stats currStats;
+        for(Entry<String,Stats> e : hashMap.entrySet()) {
+            currStats = e.getValue();
+            System.out.printf("Place: %s%nMin: %.2f%nMax: %.2f%nAverage: %.10f%n%n",
+                e.getKey(), currStats.min, currStats.max, currStats.getAverage());
+        }
     }
 }
 
@@ -55,7 +100,6 @@ class Worker implements Runnable {
                     if(buffer.get() == NEWLINE_B) break; 
                 } 
             }
-            buffer.get(); // Skip Newline
             int limit = Math.min(buffer.remaining() , (int)(file.length() / numThreads));
 
             var hashMap = Container.maps.get(threadIdx);
@@ -76,11 +120,6 @@ class Worker implements Runnable {
                     cityBytes[cityIdx++] = currByte;
                 }
 
-                if (buffer.hasRemaining()) {
-                    buffer.get(); // Ignore ';'
-                    limit--;
-                }
-
                 while (buffer.hasRemaining()) {
                     currByte = buffer.get();
                     limit--;
@@ -88,10 +127,6 @@ class Worker implements Runnable {
                     tempBytes[tempIdx++] = currByte;
                 }
 
-                if (buffer.hasRemaining()) {
-                    buffer.get(); // Ignore '\n'
-                    limit--;
-                }
                 Stats.updateStats(
                     new String(cityBytes, 0, cityIdx),
                     new String(tempBytes, 0, tempIdx),
@@ -125,8 +160,8 @@ class Stats {
 
     Stats() {
         sum = 0;
-        min = Double.MAX_VALUE;
-        max = Double.MIN_VALUE;
+        min = Double.POSITIVE_INFINITY;
+        max = Double.NEGATIVE_INFINITY;
         count = 0;
     }
 
@@ -147,5 +182,9 @@ class Stats {
             stats.count++;
             return stats;
         });
+    }
+
+    public double getAverage() {
+        return sum/(double)count;
     }
 }
