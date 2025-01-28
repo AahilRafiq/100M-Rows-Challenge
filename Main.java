@@ -5,6 +5,7 @@ import java.util.*;
 public class Main {
     public static void main(String[] args) {
         Map<String, Stats> data = new HashMap<>();
+        long startTime = System.currentTimeMillis();
 
         try (BufferedReader br = new BufferedReader(new FileReader("measurements.txt"))) {
             String line;
@@ -32,6 +33,9 @@ public class Main {
             System.out.printf("Place: %s%nMin: %.2f%nMax: %.2f%nAverage: %.10f%n%n",
             place, stats.min, stats.max, stats.getAverage());
         }
+        
+        long endTime = System.currentTimeMillis();
+        System.out.println((endTime - startTime) + "ms");
     }
 }
 

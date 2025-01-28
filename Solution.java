@@ -1,4 +1,3 @@
-
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
@@ -15,7 +14,7 @@ public class Solution {
     
     public static void main(String[] args) {
         long startTime = System.currentTimeMillis();
-        final int numThreads = Runtime.getRuntime().availableProcessors()+4;
+        final int numThreads = Runtime.getRuntime().availableProcessors();
         Container.initMaps(numThreads);
         
         try {
@@ -87,14 +86,14 @@ class Worker implements Runnable {
     public void run() {
         try (RandomAccessFile file = new RandomAccessFile("measurements.txt", "r")) {
             FileChannel channel = file.getChannel();
-            MappedByteBuffer buffer = channel.map(MapMode.READ_ONLY, 0, file.length());
-
             int offset = (int)(file.length()/numThreads)*threadIdx;
+            int chunkSize = (int)(file.length()/numThreads)+1000; // 1000 extra as needed to lil overread
+            MappedByteBuffer buffer = channel.map(MapMode.READ_ONLY, offset, Math.min(chunkSize,file.length()-offset));
+
             final byte SEMI_COLON_B = (byte) ';';
             final byte NEWLINE_B = (byte) '\n';
             
             // move buffer to offset , and to first line
-            buffer.position(offset);
             if(offset != 0) {
                 while(buffer.position() < buffer.limit()) {
                     if(buffer.get() == NEWLINE_B) break; 
