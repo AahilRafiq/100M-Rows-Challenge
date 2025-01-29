@@ -107,7 +107,7 @@ class Worker implements Runnable {
             byte[] tempBytes = new byte[300];
             int cityIdx, tempIdx;
             
-            // Note : Limit only checked at while loop
+            // Note : Limit only checked at top level while loop
             // Because for case when limit < num of chars in the line , read the whole line
             while (limit > 0) {
                 cityIdx = 0;
